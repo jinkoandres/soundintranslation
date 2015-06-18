@@ -20,7 +20,7 @@ from sklearn.neighbors import NearestNeighbors
 # 1) Load preanalysed features from csv: pre_features
 
 # set feature type
-feature_type = 'rh'
+feature_type = 'rp' # rhythmic: rp, rh   more timbral: ssd
 feature_sets = [feature_type] # this usually is an array of multiple feature sets
 filenamestub = 'features'
 
@@ -34,6 +34,11 @@ mp3_filenames, db_features = read_feature_files(filenamestub,feature_sets)
 # 2) analyze new track
 
 audiofile = "./generated.wav"
+
+
+audiofile = "./generated.wav"
+
+audiofile = "/Users/jjb/Music/mp3/1972/1972-095 Detroit Emeralds - Baby Let Me Take You (In My Arms).mp3"
 
 samplerate, samplewidth, wavedata = audiofile_read(audiofile)
 
