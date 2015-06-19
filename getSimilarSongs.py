@@ -51,11 +51,6 @@ mp3_filenames, db_features = read_feature_files(filenamestub,feature_sets)
 
 audiofile = "./generated.wav"
 
-audiofile = "/Users/jjb/Music/mp3/1972/1972-095 Detroit Emeralds - Baby Let Me Take You (In My Arms).mp3"
-
-# Toms test
-audiofile = "../rp_extract/music/Remy Boyz - My Way RMX Ft. Drake.mp3"
-
 samplerate, samplewidth, wavedata = audiofile_read(audiofile)
 
 # adapt the fext array to your needs:
@@ -123,9 +118,6 @@ audiofile = MP3_PATH + most_similar_songs[0,song_n]
 
 print audiofile
 
-# Toms test
-audiofile = "../rp_extract/music/Remy Boyz - My Way RMX Ft. Drake.mp3"
-
 
 #samplerate, samplewidth, wavedata = audiofile_read(audiofile)
 
@@ -166,26 +158,28 @@ most_similar_timestamp = most_similar_timestamp[0][0]
 
 print most_similar_timestamp
 
+start_pos = most_similar_timestamp[0]
+
 # 5) get 30 seconds around the middle timestamp
 
-output_length = 30 # duration of desired output segment in seconds
-
-middle_timestamp = (most_similar_timestamp[0] + most_similar_timestamp[1]) / 2
-
-print middle_timestamp
-
-start_pos = middle_timestamp - (output_length / 2)
-if start_pos < 0:
-    start_pos = 0
-
-end_pos = start_pos + output_length
-# TODO:
-# if end_pos > duration of song
-    # end pos = duration of song
-    # start_pos = end_pos - output_length
-# TODO: MAYBE ITS BETTER to do everything in samples (segpos) instead of timepos
-
-print "Output segment:", start_pos, end_pos
+# output_length = 30 # duration of desired output segment in seconds
+#
+# middle_timestamp = (most_similar_timestamp[0] + most_similar_timestamp[1]) / 2
+#
+# print middle_timestamp
+#
+# start_pos = middle_timestamp - (output_length / 2)
+# if start_pos < 0:
+#     start_pos = 0
+#
+# end_pos = start_pos + output_length
+# # TODO:
+# # if end_pos > duration of song
+#     # end pos = duration of song
+#     # start_pos = end_pos - output_length
+# # TODO: MAYBE ITS BETTER to do everything in samples (segpos) instead of timepos
+#
+# print "Output segment:", start_pos, end_pos
 
 # 6) Save output to WAV file and send to Max
 
