@@ -130,7 +130,6 @@ def getSimilarSongSegments(audiofile, feature_type = 'rh'):
 
     search_features = segment_features[feature_type]
 
-
     # IMPORTANT: we use query_features as a GLOBAL VARIABLE here
     # that means getSimilarSongs MUST ALWAYS BE CALLED BEFORE THIS FUNCTION
     query_feature_vector = query_features[feature_type]
@@ -143,7 +142,7 @@ def getSimilarSongSegments(audiofile, feature_type = 'rh'):
 
     sim_song_search.fit(search_features)
 
-    # Get the most similar songs
+    # Get the most similar song SEGMENTS indices
     most_similar_segment_index = sim_song_search.kneighbors(query_feature_vector, return_distance=False)
 
     # here you get the segment's sample position
@@ -152,14 +151,20 @@ def getSimilarSongSegments(audiofile, feature_type = 'rh'):
     # and time positions in seconds
     # segment_features['timepos']
 
+    # print most_similar_segment_index
+
+    # print segment_features['segpos'][most_similar_segment_index]
+
     most_similar_timestamp = segment_features['timepos'][most_similar_segment_index]
+
+    # print most_similar_timestamp
 
     # quit the [[[]]] (we got a nested array for some reason)
     most_similar_timestamp = most_similar_timestamp[0][0]
 
-    print most_similar_timestamp
+    # print most_similar_timestamp
 
-    # returns tuple (start_pos, end_pos)
+    # return tuple (start_pos, end_pos)
     return (most_similar_timestamp[0],most_similar_timestamp[1])
 
 
@@ -216,14 +221,9 @@ if __name__ == '__main__':
     # our ids are the mp3_filenames (relative path only)
     mp3_filenames, reference_db_filenames = read_feature_files(filenamestub,feature_sets)
 
-
-
     # get similar songs with new wav file:
 
     new_wavfile = "./generated.wav"
-
-    # TOM TEST
-    new_wavfile = "../rp_extract/music/24bit_audio.wav"
 
     similar_songs = getSimilarSongs(new_wavfile, mp3_filenames, reference_db_filenames, feature_type)
 
@@ -239,10 +239,6 @@ if __name__ == '__main__':
     audiofile = MP3_PATH + similar_songs[song_n]
 
     print audiofile
-
-    # TOM TEST
-    audiofile = "../rp_extract/music/Remy Boyz - My Way RMX Ft. Drake.mp3"
-
 
     # FIND THE BEST SEGMENT that matches the original query
 
