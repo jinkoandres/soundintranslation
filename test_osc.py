@@ -16,7 +16,7 @@ def main():
 	quit = False
 	try:
 		while not quit:
-			receiver.currentElement
+			print receiver.address
 			time.sleep(1.0/30)
 		#End program
 		receiver.close()

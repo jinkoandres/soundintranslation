@@ -11,7 +11,7 @@ class OSCReceiver(OSC.OSCServer, Thread):
 		self.addMsgHandler('default', self.msgReceive)
 		self.basetime = basetime
 		self.messages = {} # address: value
-
+		self.address = ""
 		#GUI values
 		self.currentElement = ""
 		self.currentFeature = "POSITION"
@@ -20,6 +20,7 @@ class OSCReceiver(OSC.OSCServer, Thread):
 
 	def msgReceive(self, addr, tags, data, sender):
 		#mocap Element
+		self.address = addr
 		if "mocapElement" in addr:
 			self.messages[addr] = data
 		elif addr == "/GUI/currentElement":
@@ -30,8 +31,7 @@ class OSCReceiver(OSC.OSCServer, Thread):
 			self.currentFilter = data[0]
 		elif addr == "/GUI/log":
 			self.log = data[0]
-		elif addr == "/value":
-			print data[0]
+			
 
 	def run(self):
 		c = self.connection
