@@ -17,6 +17,15 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
 
 
+
+# IMPORTANT:
+# we define query_features as global variable
+# as we need to reuse them in BOTH functions below
+# only getSimilarSongs will set (write) it, getSimilarSongSegments will read it only
+
+query_features = {}
+
+
 # getSimilarSongs:
 
 # audiofile: name of .wav (or .mp3) file to be analyzed as new query
@@ -25,6 +34,8 @@ from sklearn.neighbors import NearestNeighbors
 # feature_type: feature type to be used for similarity search: 'rh' or 'rp' or 'ssd' ...
 
 def getSimilarSongs(audiofile, reference_db_filenames, reference_db_features, feature_type = 'rh'):
+
+    global query_features # GLOBAL VAR because it is reused in getSimilarSongSegments (see IMPORTANT note above)
 
     # Read Wav File
 
@@ -88,6 +99,68 @@ def getSimilarSongs(audiofile, reference_db_filenames, reference_db_features, fe
 
     return(most_similar_songs)
 
+
+
+# getSimilarSongSegments:
+
+# YOU MUST CALL getSimilarSongs BEFORE!
+
+# audiofile: name of .wav (or .mp3) file to be analyzed as new query
+# feature_type: feature type to be used for similarity search: 'rh' or 'rp' or 'ssd' ...
+
+def getSimilarSongSegments(audiofile, feature_type = 'rh'):
+
+    samplerate, samplewidth, wavedata = audiofile_read(audiofile)
+
+    # here we set the feature type for the analysis, but we need to put it in a list [.]
+    fext = [feature_type]
+
+    segment_features = rp_extract(wavedata,
+                      samplerate,
+                      extract_rp   = ('rp' in fext),          # extract Rhythm Patterns features
+                      extract_ssd  = ('ssd' in fext),           # extract Statistical Spectrum Descriptor
+                      extract_sh   = ('sh' in fext),          # extract Statistical Histograms
+                      extract_tssd = ('tssd' in fext),          # extract temporal Statistical Spectrum Descriptor
+                      extract_rh   = ('rh' in fext),           # extract Rhythm Histogram features
+                      extract_trh  = ('trh' in fext),          # extract temporal Rhythm Histogram features
+                      extract_mvd  = ('mvd' in fext),        # extract Modulation Frequency Variance Descriptor
+                      skip_leadin_fadeout=0,
+                      step_width=1,
+                      return_segment_features = True)
+
+    search_features = segment_features[feature_type]
+
+
+    # IMPORTANT: we use query_features as a GLOBAL VARIABLE here
+    # that means getSimilarSongs MUST ALWAYS BE CALLED BEFORE THIS FUNCTION
+    query_feature_vector = query_features[feature_type]
+
+    # Searching similar song segments
+
+    sim_song_search = NearestNeighbors(n_neighbors = 1, metric='euclidean')
+
+    # TODO proper Scaling (Normalization) (see above)
+
+    sim_song_search.fit(search_features)
+
+    # Get the most similar songs
+    most_similar_segment_index = sim_song_search.kneighbors(query_feature_vector, return_distance=False)
+
+    # here you get the segment's sample position
+    # segment_features['segpos']
+
+    # and time positions in seconds
+    # segment_features['timepos']
+
+    most_similar_timestamp = segment_features['timepos'][most_similar_segment_index]
+
+    # quit the [[[]]] (we got a nested array for some reason)
+    most_similar_timestamp = most_similar_timestamp[0][0]
+
+    print most_similar_timestamp
+
+    # returns tuple (start_pos, end_pos)
+    return (most_similar_timestamp[0],most_similar_timestamp[1])
 
 
 # defGetCenteredSegment(...):
@@ -156,13 +229,10 @@ if __name__ == '__main__':
 
     print "Most similar songs:"
 
-    print similar_songs
+    for song in similar_songs:
+        print song
 
-    print type(similar_songs)
-
-
-    # 4) Now for the most similar song (1 or 2 or 3) we analyze the FULL song again
-    #    and find the BEST SEGMENT that matches the original query
+    # Which song (0, 1, 2 ...) do you want to get the best segments from (max. 5)
 
     song_n = 0
 
@@ -174,46 +244,9 @@ if __name__ == '__main__':
     audiofile = "../rp_extract/music/Remy Boyz - My Way RMX Ft. Drake.mp3"
 
 
-    samplerate, samplewidth, wavedata = audiofile_read(audiofile)
+    # FIND THE BEST SEGMENT that matches the original query
 
+    (start_time, end_time) = getSimilarSongSegments(audiofile, feature_type)
 
-    fext = feature_sets = [feature_type]
+    print start_time, end_time
 
-    segment_features = rp_extract(wavedata,
-                      samplerate,
-                      extract_rp   = ('rp' in fext),          # extract Rhythm Patterns features
-                      extract_ssd  = ('ssd' in fext),           # extract Statistical Spectrum Descriptor
-                      extract_sh   = ('sh' in fext),          # extract Statistical Histograms
-                      extract_tssd = ('tssd' in fext),          # extract temporal Statistical Spectrum Descriptor
-                      extract_rh   = ('rh' in fext),           # extract Rhythm Histogram features
-                      extract_trh  = ('trh' in fext),          # extract temporal Rhythm Histogram features
-                      extract_mvd  = ('mvd' in fext),        # extract Modulation Frequency Variance Descriptor
-                      skip_leadin_fadeout=0,
-                      step_width=1,
-                      return_segment_features = True)
-
-    search_features = segment_features[feature_type]
-
-    sim_song_search = NearestNeighbors(n_neighbors = 1, metric='euclidean')
-
-    # TODO proper Scaling (Normalization) (see above)
-
-    sim_song_search.fit(search_features)
-
-    # Get the most similar songs
-    most_similar_segment_index = sim_song_search.kneighbors(query_feature_vector, return_distance=False)
-
-    # here you get the segment's sample position
-    # segment_features['segpos']
-
-    # and time positions in seconds
-    # segment_features['timepos']
-
-    most_similar_timestamp = segment_features['timepos'][most_similar_segment_index]
-
-    # quit the [[[]]] (we got a nested array for some reason
-    most_similar_timestamp = most_similar_timestamp[0][0]
-
-    print most_similar_timestamp
-
-    start_pos = most_similar_timestamp[0]
