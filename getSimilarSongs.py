@@ -46,67 +46,80 @@ mp3_filenames, db_features = read_feature_files(filenamestub,feature_sets)
 
 
 
-# 2) analyze new track
-# THIS NEEDS TO BE TRIGGERED BY THE DEVICE SOMEHOW
 
 audiofile = "./generated.wav"
 
-samplerate, samplewidth, wavedata = audiofile_read(audiofile)
 
-# adapt the fext array to your needs:
-# fext = ['rp','ssd','rh'] # ,'mvd' sh, tssd, trh
-fext = feature_sets
-
-query_features = rp_extract(wavedata,
-                  samplerate,
-                  extract_rp   = ('rp' in fext),          # extract Rhythm Patterns features
-                  extract_ssd  = ('ssd' in fext),           # extract Statistical Spectrum Descriptor
-                  extract_sh   = ('sh' in fext),          # extract Statistical Histograms
-                  extract_tssd = ('tssd' in fext),          # extract temporal Statistical Spectrum Descriptor
-                  extract_rh   = ('rh' in fext),           # extract Rhythm Histogram features
-                  extract_trh  = ('trh' in fext),          # extract temporal Rhythm Histogram features
-                  extract_mvd  = ('mvd' in fext),        # extract Modulation Frequency Variance Descriptor
-                  skip_leadin_fadeout=0,
-                  step_width=1)
+# new_wavfile: name of .wav file to be analyzed as new query
+# reference_db_filenames: list of audio filenames that were pre-analyzed
+# reference_db_features: a dict containing the pre-analyzed features from the reference_db
+# feature_type: feature type to be used for similarity search: 'rh' or 'rp' or 'ssd' ...
 
 
 
+def getSimilarSongs(new_wavfile, reference_db_filenames, reference_db_features, feature_type = 'rh'):
 
-# 3) search for similar songs in pre-analyzed song dataset (based on song's averaged features)
+    # Read Wav File
 
-# we decided for one feature type above
+    samplerate, samplewidth, wavedata = audiofile_read(new_wavfile)
 
-query_feature_vector = query_features[feature_type]
+    # Analyze New Audio
 
-db_feature_vectors = db_features[feature_type]
+    # here we set the feature type for the analysis, but we need to put it in a list [.]
+    fext = [feature_type]
 
-# Initialize the similarity search object
+    query_features = rp_extract(wavedata,
+                      samplerate,
+                      extract_rp   = ('rp' in fext),          # extract Rhythm Patterns features
+                      extract_ssd  = ('ssd' in fext),           # extract Statistical Spectrum Descriptor
+                      extract_sh   = ('sh' in fext),          # extract Statistical Histograms
+                      extract_tssd = ('tssd' in fext),          # extract temporal Statistical Spectrum Descriptor
+                      extract_rh   = ('rh' in fext),           # extract Rhythm Histogram features
+                      extract_trh  = ('trh' in fext),          # extract temporal Rhythm Histogram features
+                      extract_mvd  = ('mvd' in fext),        # extract Modulation Frequency Variance Descriptor
+                      skip_leadin_fadeout=0,
+                      step_width=1)
 
-sim_song_search = NearestNeighbors(n_neighbors = 6, metric='euclidean')
+    # from the dict returned by rp_extract, we take only the one feature_type we want
+    query_feature_vector = query_features[feature_type]
 
-# TODO proper Scaling (Normalization) would need to add the live extracted song to the db_features
+    # reference_db_features should be a dict containing several feature types
+    # we take the feature type given as parameter
 
-# Normalize the extracted features
-# scaled_feature_space = StandardScaler().fit_transform(demoset_features)
+    reference_feature_vectors = reference_db_features[feature_type]
 
-# Fit the Nearest-Neighbor search object to the extracted features
-# sim_song_search.fit(scaled_feature_space)
+    # Search for similar songs in pre-analyzed song dataset (based on song's averaged features)
 
-sim_song_search.fit(db_feature_vectors)
+    # initialize the similarity search object
+    sim_song_search = NearestNeighbors(n_neighbors = 6, metric='euclidean')
 
-# Get the most similar songs
-(distances, similar_song_ids) = sim_song_search.kneighbors(query_feature_vector, return_distance=True)
+    # TODO proper Scaling (Normalization) would need to add the live extracted song to the db_features
 
-# just if the query is contained in the db feature set (if normalisation is used) we need to take it away from the result
-#similar_songs = similar_songs[1:]
+    # Normalize the extracted features
+    # scaled_feature_space = StandardScaler().fit_transform(reference_feature_vectors)
 
-#print similar_song_ids
+    # Fit the Nearest-Neighbor search object to the scaled features
+    # sim_song_search.fit(scaled_feature_space)
 
-most_similar_songs = mp3_filenames[feature_type][similar_song_ids]
+    sim_song_search.fit(reference_feature_vectors)
 
-print "Most similar songs:"
+    # Get the most similar songs
+    (distances, similar_song_ids) = sim_song_search.kneighbors(query_feature_vector, return_distance=True)
 
-print most_similar_songs
+    # if the query is contained in the db feature set (usually if normalisation is used) we need to take it away from the result
+    #similar_songs = similar_songs[1:]
+
+    #print similar_song_ids
+
+    most_similar_songs = reference_db_filenames[feature_type][similar_song_ids]
+
+    print "Most similar songs:"
+
+    print most_similar_songs
+
+
+
+
 
 
 # 4) Now for the most similar song (1 or 2 or 3) we analyze the FULL song again
@@ -181,6 +194,3 @@ start_pos = most_similar_timestamp[0]
 #
 # print "Output segment:", start_pos, end_pos
 
-# 6) Save output to WAV file and send to Max
-
-# TODO save to WAV
